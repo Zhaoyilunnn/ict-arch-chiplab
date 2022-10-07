@@ -10,7 +10,7 @@
 
 #define INIT_H      23
 #define INIT_M      59
-#define INIT_S      50
+#define INIT_S      0x0
 #define MAX_H       24
 #define MAX_M       60
 #define MAX_S       60
@@ -63,7 +63,7 @@ init:
     csrxchg t1, t2, LOONGARCH_CSR_CRMD # CRMD.IE = 1
 
     /* Init clock */
-    li.w    t1, 0x000000a3
+    li.w    t1, 0x00010003
     csrwr   t1, LOONGARCH_CSR_TCFG
 
     /* Enable clock interrupt */
@@ -83,20 +83,16 @@ init:
 .org 0x9000
 show_time:
     li.w    t1, MAX_10
-#    addi    t4, t4, 1
-#    beq     t4, t1, carry_1
-#
-#carry_1:
-#    li.w    t4, 0
-#
-#    slli.w  t2, t2, 16 
-#    slli.w  t3, t3, 4 
-#    # test TODO: delete
-#    addi    t4, t4, 1
-    #li.w    t1, 0x235951
-    #st.w    t1, t0, 0 /* display 23:59:50 for simulation */
+    beq     t4, t1, carry_1
+
+show_time_end:
+    st.w    t4, t0, 0   # show time 
     addi.w  t4, t4, 1
-    st.w    t4, t0, 0 /* display 23:59:50 for simulation */
 
 1:
     b   1b
+
+carry_1:
+    li.w    t4, 0x0
+    b       show_time_end
+
