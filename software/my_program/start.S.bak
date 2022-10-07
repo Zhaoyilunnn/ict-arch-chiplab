@@ -1,0 +1,52 @@
+#include "asm.h"
+#include "regdef.h"
+#include "cpu_cde.h"
+
+    .globl _start
+    .globl start
+    .globl __main
+
+_start:
+start:
+    b    locate
+
+/* exception handle */
+.org 0x8000 //0x1c008000 /* you can change exception handler entry at will */
+                         /* but remember to set EENTRY.VA */
+1:
+    #b    1b /* replace this line with your own exception handler */
+    li.w   t0, NUM_ADDR
+    li.w   t1, 0x235950
+    st.w   t1, t0, 0 /* display 23:59:50 for simulation */
+    ertn
+
+locate:
+    #li.w   t0, NUM_ADDR
+    #li.w   t1, 0x235950
+    #st.w   t1, t0, 0 /* display 23:59:50 for simulation */
+
+    /* Set up exception and interrupt entry */
+    li.w    t0, 0x1c008000
+    csrwr   t0, 0xc    
+    
+    /* Open global interrupt */
+    li.w    t0, 0x4
+    csrwr   t0, 0x0 # CRMD.IE = 1
+
+    /* Clear clock interrupt */
+    li.w    t0, 0x1
+    csrwr   t0, 0x44
+
+    /* Init clock */
+    li.w    t0, 0x23
+    csrwr   t0, 0x41
+
+    /* Enable clock interrupt */
+    li.w    t0, 0x100
+    csrwr   t0, 0x4
+
+    li.w    t0, 0x0
+    beq     t0, zero, 1b
+1:
+    b    1b
+

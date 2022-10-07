@@ -1,0 +1,20 @@
+    /* Set up exception and interrupt entry */
+    li.w    t0, 0x1c008000
+    csrwr   t0, 0xc    
+    
+    /* Open global interrupt */
+    li.w    t0, 0x4
+    csrwr   t0, 0x0 # CRMD.IE = 1
+
+    /* Clear clock interrupt */
+    li.w    t0, 0x1
+    csrwr   t0, 0x44
+
+    /* Init clock */
+    li.w    t0, 0x21
+    csrwr   t0, 0x41
+
+    /* Enable clock interrupt */
+    li.w    t0, 0x100
+    csrwr   t0, 0x4
+
