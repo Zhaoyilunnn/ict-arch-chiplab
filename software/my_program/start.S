@@ -16,10 +16,19 @@
 #define MAX_S       60
 #define BIAS_H      16
 #define BIAS_M      8
-#define MAX_10      0xa
-#define MAX_6       0x6
-#define MAX_4       0x4
-#define MAX_3       0x3
+#define MAX_10          0xa
+#define MAX_60          0x60
+#define MAX_1000        0xa00
+#define MAX_6000        0x6000
+#define MAX_40000       0x40000
+#define MAX_300000      0x300000
+
+#define MASK_0      0xf
+#define MASK_1      0xf0
+#define MASK_2      0xf00
+#define MASK_3      0xf000
+#define MASK_4      0xf0000
+#define MASK_5      0xf00000
 
     .globl _start
     .globl start
@@ -64,6 +73,7 @@ init:
 
     /* Init clock */
     li.w    t1, 0x00010003
+    #li.w    t1, 0x00001003
     csrwr   t1, LOONGARCH_CSR_TCFG
 
     /* Enable clock interrupt */
@@ -72,10 +82,8 @@ init:
 
     # Initialize time 
     li.w    t0, NUM_ADDR
-    li.w    t2, INIT_H
-    li.w    t3, INIT_M
-    li.w    t4, INIT_S
-    li.w    t8, 0x0     # Carry flag
+    #li.w    t4, INIT_S
+    li.w    t4, 0x235950
 1:
     b    1b
 
@@ -83,7 +91,8 @@ init:
 .org 0x9000
 show_time:
     li.w    t1, MAX_10
-    beq     t4, t1, carry_1
+    andi    t5, t4, MASK_0
+    beq     t5, t1, carry_0
 
 show_time_end:
     st.w    t4, t0, 0   # show time 
@@ -92,7 +101,62 @@ show_time_end:
 1:
     b   1b
 
-carry_1:
-    li.w    t4, 0x0
+carry_0:
+    sub.w   t4, t4, t5
+
+    li.w    t1, MAX_60
+    addi.w  t4, t4, 0x10    
+    andi    t5, t4, MASK_1
+    beq     t5, t1, carry_1 
+
     b       show_time_end
 
+carry_1:
+    sub.w   t4, t4, t5 
+
+    li.w    t1, MAX_1000
+    addi.w  t4, t4, 0x100 
+    andi    t5, t4, MASK_2
+    beq     t5, t1, carry_2 
+
+    b       show_time_end 
+
+carry_2:
+    sub.w   t4, t4, t5 
+
+    li.w    t1, MAX_6000
+    li.w    t3, 0x1000
+    add.w   t4, t4, t3 
+    li.w    t3, MASK_3
+    and     t5, t4, t3
+    beq     t5, t1, carry_3 
+
+    b       show_time_end 
+    
+carry_3:
+    sub.w   t4, t4, t5 
+
+    li.w    t1, MAX_40000
+    li.w    t3, 0x10000
+    add.w   t4, t4, t3 
+    li.w    t3, MASK_4
+    and     t5, t4, t3
+    beq     t5, t1, carry_4 
+
+    b       show_time_end 
+    
+carry_4:
+    sub.w   t4, t4, t5 
+
+    li.w    t1, MAX_300000
+    li.w    t3, 0x100000
+    add.w   t4, t4, t3 
+    li.w    t3, MASK_5
+    and     t5, t4, t3
+    beq     t5, t1, carry_5 
+
+    b       show_time_end 
+
+carry_5:
+    sub.w   t4, t4, t5 
+    b       show_time_end 
