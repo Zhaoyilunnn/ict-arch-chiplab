@@ -7,6 +7,7 @@
 #define LOONGARCH_CSR_TICLR         0x44
 #define LOONGARCH_CSR_TCFG          0x41
 #define LOONGARCH_CSR_ECFG          0x4
+#define LOONGARCH_CSR_ERA           0x6
 
 #define INIT_H      23
 #define INIT_M      59
@@ -48,7 +49,7 @@ start:
     
     # Set interrupt return entry
     li.w    t1, 0x1c009000
-    csrwr   t1, csr_era 
+    csrwr   t1, LOONGARCH_CSR_ERA 
 
     /* Open global interrupt */
     li.w    t1, 0x4
@@ -58,6 +59,12 @@ start:
     ertn
 
 init:
+    # Initialize time 
+    li.w    t0, NUM_ADDR
+    #li.w    t4, INIT_S
+    li.w    t4, 0x235950
+    st.w    t4, t0, 0   # show time 
+
     /* Set up exception and interrupt entry */
     li.w    t1, 0x1c008000
     csrwr   t1, LOONGARCH_CSR_EENTRY    
@@ -72,18 +79,13 @@ init:
     csrxchg t1, t2, LOONGARCH_CSR_CRMD # CRMD.IE = 1
 
     /* Init clock */
-    li.w    t1, 0x00010003
-    #li.w    t1, 0x00001003
+    li.w    t1, 0x00010003 # Approximately 50000 clock = 1s
     csrwr   t1, LOONGARCH_CSR_TCFG
 
     /* Enable clock interrupt */
     li.w    t1, 0x800
     csrwr   t1, LOONGARCH_CSR_ECFG
 
-    # Initialize time 
-    li.w    t0, NUM_ADDR
-    #li.w    t4, INIT_S
-    li.w    t4, 0x235950
 1:
     b    1b
 
@@ -91,12 +93,12 @@ init:
 .org 0x9000
 show_time:
     li.w    t1, MAX_10
+    addi.w  t4, t4, 1
     andi    t5, t4, MASK_0
     beq     t5, t1, carry_0
 
 show_time_end:
     st.w    t4, t0, 0   # show time 
-    addi.w  t4, t4, 1
 
 1:
     b   1b
